@@ -1,108 +1,197 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-// Function to print the Tic Tac Toe board
-void printBoard(char board[3][3]) {
-    printf("\n-------------\n");
-    for (int i = 0; i < 3; i++) {
-        printf("| ");
-        for (int j = 0; j < 3; j++) {
-            printf("%c | ", board[i][j]);
+#define SIZE 3
+
+// ---------------------------
+// Game State Enum
+// ---------------------------
+typedef enum {
+    GAME_CONTINUE,
+    GAME_X_WINS,
+    GAME_O_WINS,
+    GAME_TIE
+} GameState;
+
+// ---------------------------
+// Print Board
+// ---------------------------
+void printBoard(char board[SIZE][SIZE]) {
+    printf("\n");
+    printf("    0   1   2\n");
+    printf("  -------------\n");
+
+    for (int i = 0; i < SIZE; i++) {
+        printf("%d |", i);
+        for (int j = 0; j < SIZE; j++) {
+            printf(" %c |", board[i][j]);
         }
-        printf("\n-------------\n");
+        printf("\n  -------------\n");
     }
+    printf("\n");
 }
 
-// Function to check if the game is over
-bool gameOver(char board[3][3]) {
-    // Check rows, columns, and diagonals for a win
-    for (int i = 0; i < 3; i++) {
-        if (board[i][0] != ' ' && board[i][0] == board[i][1] && board[i][1] == board[i][2]) {
-            return true; // Row win
-        }
-        if (board[0][i] != ' ' && board[0][i] == board[1][i] && board[1][i] == board[2][i]) {
-            return true; // Column win
-        }
-    }
-    if (board[0][0] != ' ' && board[0][0] == board[1][1] && board[1][1] == board[2][2]) {
-        return true; // Diagonal win (top-left to bottom-right)
-    }
-    if (board[0][2] != ' ' && board[0][2] == board[1][1] && board[1][1] == board[2][0]) {
-        return true; // Diagonal win (top-right to bottom-left)
-    }
-
-    // Check for a tie (board full)
-    bool tie = true;
-    for (int i = 0; i < 3; i++) {
-        for (int j = 0; j < 3; j++) {
-            if (board[i][j] == ' ') {
-                tie = false;
-                break;
-            }
-        }
-        if (!tie) break;
-    }
-    if (tie) return true;
-
-    // If none of the above conditions are met, game is not over
-    return false;
-}
-
-// Function to check if a move is valid
-bool isValidMove(char board[3][3], int row, int col) {
-    if (row < 0 || row >= 3 || col < 0 || col >= 3) {
+// ---------------------------
+// Check Valid Move
+// ---------------------------
+bool isValidMove(char board[SIZE][SIZE], int row, int col) {
+    if (row < 0 || row >= SIZE || col < 0 || col >= SIZE)
         return false;
-    }
-    if (board[row][col] != ' ') {
+    if (board[row][col] != ' ')
         return false;
-    }
     return true;
 }
 
-// Function to perform a move
-void makeMove(char board[3][3], int row, int col, char player) {
-    board[row][col] = player;
+// ---------------------------
+// Make Move
+// ---------------------------
+void makeMove(char board[SIZE][SIZE], int row, int col, char symbol) {
+    board[row][col] = symbol;
 }
 
+// ---------------------------
+// Player Move (forced valid)
+// ---------------------------
+void playerMove(char board[SIZE][SIZE], char symbol) {
+    int row, col;
+
+    while (1) {
+        printf("Enter row and column: ");
+        scanf("%d %d", &row, &col);
+
+        if (isValidMove(board, row, col)) {
+            makeMove(board, row, col, symbol);
+            return;
+        }
+
+        printf("Invalid move — that spot is taken or out of bounds.\n");
+    }
+}
+
+// ---------------------------
+// Computer Move (simple AI)
+// ---------------------------
+void computerMove(char board[SIZE][SIZE]) {
+    // Simple AI: first available cell
+    for (int i = 0; i < SIZE; i++) {
+        for (int j = 0; j < SIZE; j++) {
+            if (board[i][j] == ' ') {
+                board[i][j] = 'O';
+                return;
+            }
+        }
+    }
+}
+
+// ---------------------------
+// Game Over Check
+// ---------------------------
+GameState gameOver(char board[SIZE][SIZE]) {
+    // Check rows and columns
+    for (int i = 0; i < SIZE; i++) {
+        // Row
+        if (board[i][0] != ' ' &&
+            board[i][0] == board[i][1] &&
+            board[i][1] == board[i][2]) {
+            return (board[i][0] == 'X') ? GAME_X_WINS : GAME_O_WINS;
+        }
+
+        // Column
+        if (board[0][i] != ' ' &&
+            board[0][i] == board[1][i] &&
+            board[1][i] == board[2][i]) {
+            return (board[0][i] == 'X') ? GAME_X_WINS : GAME_O_WINS;
+        }
+    }
+
+    // Diagonal TL → BR
+    if (board[0][0] != ' ' &&
+        board[0][0] == board[1][1] &&
+        board[1][1] == board[2][2]) {
+        return (board[0][0] == 'X') ? GAME_X_WINS : GAME_O_WINS;
+    }
+
+    // Diagonal TR → BL
+    if (board[0][2] != ' ' &&
+        board[0][2] == board[1][1] &&
+        board[1][1] == board[2][0]) {
+        return (board[0][2] == 'X') ? GAME_X_WINS : GAME_O_WINS;
+    }
+
+    // Check for tie (board full)
+    bool full = true;
+    for (int i = 0; i < SIZE; i++) {
+        for (int j = 0; j < SIZE; j++) {
+            if (board[i][j] == ' ') {
+                full = false;
+                break;
+            }
+        }
+        if (!full) break;
+    }
+
+    if (full) return GAME_TIE;
+
+    return GAME_CONTINUE;
+}
+
+// ---------------------------
+// Main
+// ---------------------------
 int main() {
-    char board[3][3] = {
+    char board[SIZE][SIZE] = {
         {' ', ' ', ' '},
         {' ', ' ', ' '},
         {' ', ' ', ' '}
     };
+
+    int mode;
+    printf("Choose mode:\n1. Player vs Player\n2. Player vs Computer\n");
+    scanf("%d", &mode);
+
     bool player1Turn = true;
+    GameState state = GAME_CONTINUE;
 
-    while (!gameOver(board)) {
+    while (state == GAME_CONTINUE) {
         printBoard(board);
-        int row, col;
-        if (player1Turn) {
-            printf("Player 1's turn (X): ");
-        } else {
-            printf("Player 2's turn (O): ");
-        }
-        scanf("%d %d", &row, &col);
 
-        if (isValidMove(board, row, col)) {
-            if (player1Turn) {
-                makeMove(board, row, col, 'X');
-            } else {
-                makeMove(board, row, col, 'O');
-            }
-            player1Turn = !player1Turn; // Switch turns
+        if (player1Turn) {
+            printf("Player 1 (X) move:\n");
+            playerMove(board, 'X');
         } else {
-            printf("Invalid move! Please try again.\n");
+            if (mode == 1) {
+                printf("Player 2 (O) move:\n");
+                playerMove(board, 'O');
+            } else {
+                printf("Computer (O) move:\n");
+                computerMove(board);
+            }
         }
+
+        player1Turn = !player1Turn;
+        state = gameOver(board);
     }
 
     printBoard(board);
-    if (gameOver(board)) {
-        if (player1Turn) {
-            printf("Player 2 (O) wins!\n");
-        } else {
+
+    switch (state) {
+        case GAME_X_WINS:
             printf("Player 1 (X) wins!\n");
-        }
-    } else {
-        printf("It's a tie!\n");
+            break;
+
+        case GAME_O_WINS:
+            if (mode == 1)
+                printf("Player 2 (O) wins!\n");
+            else
+                printf("Computer (O) wins!\n");
+            break;
+
+        case GAME_TIE:
+            printf("It's a tie!\n");
+            break;
+
+        default:
+            break;
     }
 
     return 0;
